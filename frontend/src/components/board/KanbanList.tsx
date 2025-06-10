@@ -176,7 +176,7 @@ export function KanbanList({
               className="font-medium text-gray-900 transition-colors cursor-pointer hover:text-blue-600"
               onClick={() => setIsEditingTitle(true)}
             >
-              {list.title}
+              {list.title} {list._id}
             </h3>
           )}
 

@@ -6,7 +6,6 @@ export const redisClient: RedisClientType = createClient({
   url: process.env.REDIS_URL || "redis://localhost:6379",
 });
 
-console.log("Redis client created with URL:", process.env.REDIS_URL);
 
 export const connectRedis = async (): Promise<void> => {
   try {
