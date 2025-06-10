@@ -474,9 +474,6 @@ router.put(
         return res.status(403).json({ message: "Access denied" });
       }
 
-      // Store the old listId for socket event
-      const oldListId = card.listId;
-
       // Update the card position and list
       const updatedCard = await Card.findByIdAndUpdate(
         cardId,

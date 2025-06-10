@@ -1,17 +1,17 @@
-import { useState, useEffect } from 'react'
-import { Navigate } from 'react-router-dom'
-import { useSelector } from 'react-redux'
-import { RootState } from '../store'
-import { LoginForm } from '../components/auth/LoginForm'
-import { SignupForm } from '../components/auth/SignupForm'
-import { Kanban } from 'lucide-react'
+import { useState } from "react";
+import { Navigate } from "react-router-dom";
+import { useSelector } from "react-redux";
+import type { RootState } from "../store";
+import { LoginForm } from "../components/auth/LoginForm";
+import { SignupForm } from "../components/auth/SignupForm";
+import { Kanban } from "lucide-react";
 
 export function AuthPage() {
-  const { isAuthenticated } = useSelector((state: RootState) => state.auth)
-  const [isLogin, setIsLogin] = useState(true)
+  const { isAuthenticated } = useSelector((state: RootState) => state.auth);
+  const [isLogin, setIsLogin] = useState(true);
 
   if (isAuthenticated) {
-    return <Navigate to="/dashboard" replace />
+    return <Navigate to="/dashboard" replace />;
   }
 
   return (
@@ -34,5 +34,5 @@ export function AuthPage() {
         )}
       </div>
     </div>
-  )
+  );
 }

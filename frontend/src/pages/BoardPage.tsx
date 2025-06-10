@@ -2,12 +2,12 @@ import { useEffect } from 'react'
 import { useParams } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import { useDispatch } from 'react-redux'
-import { KanbanBoard } from '../components/board/KanbanBoard'
-import { BoardHeader } from '../components/board/BoardHeader'
-import { setCurrentBoard } from '../store/slices/boardSlice'
-import { socketService } from '../services/socket'
-import api from '../services/api'
-import type { Board } from '../types'
+import { KanbanBoard } from '@/components/board/KanbanBoard'
+import { BoardHeader } from '@/components/board/BoardHeader'
+import { setCurrentBoard } from '@/store/slices/boardSlice'
+import { socketService } from '@/services/socket'
+import api from '@/services/api'
+import type { Board } from '@/types'
 
 export function BoardPage() {
   const { boardId } = useParams<{ boardId: string }>()

@@ -6,7 +6,6 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   DndContext,
   type DragEndEvent,
-  type DragOverEvent,
   type DragStartEvent,
   PointerSensor,
   useSensor,
@@ -16,6 +15,7 @@ import {
 } from "@dnd-kit/core";
 import {
   SortableContext,
+  arrayMove,
   horizontalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { setDraggedCard } from "@/store/slices/uiSlice";
@@ -69,48 +69,13 @@ export function KanbanBoard({ board }: KanbanBoardProps) {
   const handleDragStart = (event: DragStartEvent) => {
     const { active } = event;
 
-    console.log("Drag started:", active);
-
     if (active.data.current?.type === "card") {
-      console.log("Dragging card:", active.data.current.card);
-
       const card = active.data.current.card as CardType;
       setActiveCard(card);
       dispatch(setDraggedCard(card._id));
     } else if (active.data.current?.type === "list") {
       const list = active.data.current.list as ListType;
       setActiveList(list);
-    }
-  };
-
-  const handleDragOver = (event: DragOverEvent) => {
-    const { active, over } = event;
-
-    if (!over) return;
-
-    const activeType = active.data.current?.type;
-    const overType = over.data.current?.type;
-
-    // Card over card in different list
-    if (activeType === "card" && overType === "card") {
-      const activeCard = active.data.current?.card as CardType;
-      const overCard = over.data.current?.card as CardType;
-
-      if (activeCard.listId !== overCard.listId) {
-        // Handle cross-list card movement
-        // This will be handled in dragEnd
-      }
-    }
-
-    // Card over list
-    if (activeType === "card" && overType === "list") {
-      const activeCard = active.data.current?.card as CardType;
-      const overList = over.data.current?.list as ListType;
-
-      if (activeCard.listId !== overList._id) {
-        // Handle cross-list card movement
-        // This will be handled in dragEnd
-      }
     }
   };
 
@@ -125,12 +90,6 @@ export function KanbanBoard({ board }: KanbanBoardProps) {
 
     const activeType = active.data.current?.type;
     const overType = over.data.current?.type;
-    console.log("Drag ended:", {
-      active,
-      over,
-      activeType,
-      overType,
-    });
 
     // Handle card movement
     if (activeType === "card") {
@@ -138,31 +97,39 @@ export function KanbanBoard({ board }: KanbanBoardProps) {
 
       if (overType === "card") {
         const overCard = over.data.current?.card as CardType; // Same list reordering
-        if (
-          activeCard.listId === overCard.listId &&
-          activeCard._id !== overCard._id
-        ) {
+
+        if (activeCard._id === overCard._id) return;
+
+        if (activeCard.listId === overCard.listId) {
           const sourceList = board.lists.find(
             (list) => list._id === activeCard.listId
           );
-          if (sourceList) {
-            const oldIndex = sourceList.cards.findIndex(
-              (card) => card._id === activeCard._id
-            );
-            const newIndex = sourceList.cards.findIndex(
-              (card) => card._id === overCard._id
-            );
 
-            if (oldIndex !== newIndex) {
-              // Calculate the correct position for reordering within the same list
-              const targetPosition = newIndex > oldIndex ? newIndex : newIndex;
+          if (!sourceList) return;
+          const oldIndex = sourceList.cards.findIndex(
+            (card) => card._id === activeCard._id
+          );
+          const newIndex = sourceList.cards.findIndex(
+            (card) => card._id === overCard._id
+          );
 
-              await moveCardMutation({
-                cardId: activeCard._id,
-                toListId: activeCard.listId,
-                position: targetPosition,
-              });
-            }
+          const list = board.lists.find(
+            (list) => list._id === activeCard.listId
+          );
+
+          if (list) {
+            arrayMove(list.cards, oldIndex, newIndex);
+          }
+
+          if (oldIndex !== newIndex) {
+            // Calculate the correct position for reordering within the same list
+            const targetPosition = newIndex > oldIndex ? newIndex : newIndex;
+
+            await moveCardMutation({
+              cardId: activeCard._id,
+              toListId: activeCard.listId,
+              position: targetPosition,
+            });
           }
         } // Cross-list movement
         else if (activeCard.listId !== overCard.listId) {
@@ -187,18 +154,11 @@ export function KanbanBoard({ board }: KanbanBoardProps) {
         const overList = over.data.current?.list as ListType;
 
         if (activeCard.listId !== overList._id) {
-          console.log("Moving card to new list:", {
-            cardId: activeCard._id,
-            toListId: overList._id,
-          });
-
-          const res = await moveCardMutation({
+          await moveCardMutation({
             cardId: activeCard._id,
             toListId: overList._id,
             position: overList.cards.length,
           });
-
-          console.log({ res });
         }
       }
     }
@@ -217,7 +177,6 @@ export function KanbanBoard({ board }: KanbanBoardProps) {
         sensors={sensors}
         collisionDetection={closestCorners}
         onDragStart={handleDragStart}
-        onDragOver={handleDragOver}
         onDragEnd={handleDragEnd}
       >
         <div className="h-full overflow-x-auto overflow-y-hidden">

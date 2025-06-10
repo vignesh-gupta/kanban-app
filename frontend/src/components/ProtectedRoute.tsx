@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { Navigate } from 'react-router-dom'
 import { useSelector, useDispatch } from 'react-redux'
-import { RootState } from '../store'
+import type { RootState } from '../store'
 import { loginSuccess, logout } from '../store/slices/authSlice'
 import { socketService } from '../services/socket'
 import api from '../services/api'

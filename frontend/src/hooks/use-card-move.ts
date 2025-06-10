@@ -12,8 +12,6 @@ export const useCardMove = (board: Board) => {
       toListId: string;
       position: number;
     }) => {
-      console.log("Moving card:", data);
-
       const response = await api.put(`/boards/cards/${data.cardId}/move`, {
         listId: data.toListId,
         position: data.position,

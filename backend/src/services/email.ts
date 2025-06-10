@@ -1,6 +1,6 @@
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY || "re_123")
+const resend = new Resend(process.env.RESEND_API_KEY || "re_ZfjBSaRX_5JQ6QW1cEfkh5KixjTwkr464")
 
 export const sendInvitationEmail = async (
   email: string,
@@ -10,6 +10,12 @@ export const sendInvitationEmail = async (
 ) => {
   try {
     const acceptUrl = `${process.env.CLIENT_URL}/accept-invite/${token}`
+
+    console.log(`Sending invitation email to ${email} for board "${boardTitle}" invited by ${inviterName} with token ${token}`);
+
+    console.log("Accept URL:", acceptUrl);
+    
+    
     
     await resend.emails.send({
       from: process.env.FROM_EMAIL || 'KanbanFlow <noreply@kanbanflow.com>',

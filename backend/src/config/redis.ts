@@ -1,11 +1,10 @@
 import { createClient, RedisClientType } from "redis";
 
-console.log("Redis URL", process.env.REDIS_URL || "redis://localhost:6379");
-
 export const redisClient: RedisClientType = createClient({
-  url: process.env.REDIS_URL || "redis://localhost:6379",
+  url:
+    process.env.REDIS_URL ||
+    "rediss://default:AbioAAIjcDFlNTI1MGZlOGVkYjc0YWNhOTYxMmZiMmVlMmFmZmRhM3AxMA@engaging-macaque-47272.upstash.io:6379",
 });
-
 
 export const connectRedis = async (): Promise<void> => {
   try {

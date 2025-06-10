@@ -1,13 +1,18 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { Provider } from 'react-redux'
-import { Toaster } from 'react-hot-toast'
-import { store } from './store'
-import { AuthPage } from './pages/AuthPage'
-import { DashboardPage } from './pages/DashboardPage'
-import { BoardPage } from './pages/BoardPage'
-import { ProtectedRoute } from './components/ProtectedRoute'
-import './index.css'
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { Provider } from "react-redux";
+import { Toaster } from "react-hot-toast";
+import { store } from "./store";
+import { AuthPage } from "./pages/AuthPage";
+import { DashboardPage } from "./pages/DashboardPage";
+import { BoardPage } from "./pages/BoardPage";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import "./index.css";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -16,7 +21,7 @@ const queryClient = new QueryClient({
       retry: 1,
     },
   },
-})
+});
 
 function App() {
   return (
@@ -44,14 +49,14 @@ function App() {
               />
               <Route path="/" element={<Navigate to="/dashboard" replace />} />
             </Routes>
-            <Toaster 
+            <Toaster
               position="top-right"
               toastOptions={{
                 duration: 4000,
                 style: {
-                  background: 'hsl(var(--card))',
-                  color: 'hsl(var(--card-foreground))',
-                  border: '1px solid hsl(var(--border))',
+                  background: "hsl(var(--card))",
+                  color: "hsl(var(--card-foreground))",
+                  border: "1px solid hsl(var(--border))",
                 },
               }}
             />
@@ -59,7 +64,7 @@ function App() {
         </Router>
       </QueryClientProvider>
     </Provider>
-  )
+  );
 }
 
-export default App
+export default App;
