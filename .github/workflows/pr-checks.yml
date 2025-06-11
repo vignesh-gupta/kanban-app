@@ -1,0 +1,161 @@
+name: PR Checks
+
+on:
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+        
+    # Backend checks
+    - name: Install backend dependencies
+      run: |
+        cd backend
+        pnpm install
+        
+    - name: Lint backend
+      run: |
+        cd backend
+        # Add lint script to backend package.json if not present
+        # pnpm run lint
+        echo "Backend linting would run here"
+        
+    - name: Type check backend
+      run: |
+        cd backend
+        pnpm run build
+        
+    # Backend tests (commented for now)
+    # - name: Test backend
+    #   run: |
+    #     cd backend
+    #     pnpm run test
+    #   env:
+    #     NODE_ENV: test
+    #     MONGODB_URI: mongodb://localhost:27017/kanban_test
+    #     JWT_SECRET: test_secret
+    #     REDIS_URL: redis://localhost:6379
+        
+    # Frontend checks
+    - name: Install frontend dependencies
+      run: |
+        cd frontend
+        pnpm install
+        
+    - name: Lint frontend
+      run: |
+        cd frontend
+        pnpm run lint
+        
+    - name: Type check frontend
+      run: |
+        cd frontend
+        pnpm run build
+        
+    # Frontend tests (commented for now)
+    # - name: Test frontend
+    #   run: |
+    #     cd frontend
+    #     pnpm run test
+    
+    # Services for tests (commented for now)
+    # services:
+    #   mongodb:
+    #     image: mongo:7
+    #     env:
+    #       MONGO_INITDB_ROOT_USERNAME: username
+    #       MONGO_INITDB_ROOT_PASSWORD: password
+    #     ports:
+    #       - 27017:27017
+    #     options: >-
+    #       --health-cmd "mongosh --eval 'db.runCommand({ping: 1})'"
+    #       --health-interval 10s
+    #       --health-timeout 5s
+    #       --health-retries 5
+          
+    #   redis:
+    #     image: redis:7
+    #     ports:
+    #       - 6379:6379
+    #     options: >-
+    #       --health-cmd "redis-cli ping"
+    #       --health-interval 10s
+    #       --health-timeout 5s
+    #       --health-retries 5
+
+  security-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+        
+    - name: Install dependencies and audit backend
+      run: |
+        cd backend
+        pnpm install
+        pnpm audit --audit-level moderate
+        
+    - name: Install dependencies and audit frontend
+      run: |
+        cd frontend
+        pnpm install
+        pnpm audit --audit-level moderate
+
+  code-quality:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        
+    - name: Setup pnpm
+      uses: pnpm/action-setup@v2
+      with:
+        version: 8
+        
+    - name: Install dependencies
+      run: |
+        cd backend && pnpm install
+        cd ../frontend && pnpm install
+        
+    # Uncomment when you add Prettier to your project
+    # - name: Check code formatting
+    #   run: |
+    #     cd backend && pnpm run format:check
+    #     cd ../frontend && pnpm run format:check
