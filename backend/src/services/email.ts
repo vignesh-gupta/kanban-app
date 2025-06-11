@@ -1,6 +1,13 @@
-import { Resend } from 'resend'
+import { config } from "dotenv";
+import { Resend } from "resend";
 
-const resend = new Resend(process.env.RESEND_API_KEY || "re_ZfjBSaRX_5JQ6QW1cEfkh5KixjTwkr464")
+config({
+  path: ".env",
+});
+
+const resend = new Resend(
+  process.env.RESEND_API_KEY || "re_ZfjBSaRX_5JQ6QW1cEfkh5KixjTwkr464"
+);
 
 export const sendInvitationEmail = async (
   email: string,
@@ -9,18 +16,13 @@ export const sendInvitationEmail = async (
   inviterName: string
 ) => {
   try {
-    const acceptUrl = `${process.env.CLIENT_URL}/accept-invite/${token}`
+    const acceptUrl = `${process.env.CLIENT_URL}/invite/${token}`;
 
-    console.log(`Sending invitation email to ${email} for board "${boardTitle}" invited by ${inviterName} with token ${token}`);
 
-    console.log("Accept URL:", acceptUrl);
-    
-    
-    
     await resend.emails.send({
-      from: process.env.FROM_EMAIL || 'KanbanFlow <noreply@kanbanflow.com>',
+      from: process.env.FROM_EMAIL || "KanbanFlow <noreply@kanbanflow.com>",
       to: email,
-      subject: `You've been invited to join "${boardTitle}"`,
+      subject: `You've been invited to join ${boardTitle}`,
       html: `
         <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
           <h2 style="color: #3B82F6;">You're invited to collaborate!</h2>
@@ -51,10 +53,10 @@ export const sendInvitationEmail = async (
             If you didn't expect this invitation, you can safely ignore this email.
           </p>
         </div>
-      `
-    })
+      `,
+    });
   } catch (error) {
-    console.error('Email sending failed:', error)
-    throw error
+    console.error("Email sending failed:", error);
+    throw error;
   }
-}
+};

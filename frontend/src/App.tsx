@@ -11,6 +11,8 @@ import { store } from "./store";
 import { AuthPage } from "./pages/AuthPage";
 import { DashboardPage } from "./pages/DashboardPage";
 import { BoardPage } from "./pages/BoardPage";
+import { InvitePage } from "./pages/InvitePage";
+import { NotFoundPage } from "./pages/NotFoundPage";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import "./index.css";
 
@@ -30,7 +32,9 @@ function App() {
         <Router>
           <div className="min-h-screen bg-background">
             <Routes>
+              <Route path="/" element={<Navigate to="/dashboard" replace />} />
               <Route path="/auth" element={<AuthPage />} />
+              <Route path="/invite/:token" element={<InvitePage />} />
               <Route
                 path="/dashboard"
                 element={
@@ -47,16 +51,16 @@ function App() {
                   </ProtectedRoute>
                 }
               />
-              <Route path="/" element={<Navigate to="/dashboard" replace />} />
+              <Route path="*" element={<NotFoundPage />} />
             </Routes>
             <Toaster
-              position="top-right"
+              position="bottom-right"
               toastOptions={{
                 duration: 4000,
                 style: {
-                  background: "hsl(var(--card))",
-                  color: "hsl(var(--card-foreground))",
-                  border: "1px solid hsl(var(--border))",
+                  background: "var(--card)",
+                  color: "var(--card-foreground)",
+                  border: "1px solid var(--border)",
                 },
               }}
             />

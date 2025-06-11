@@ -1,27 +1,22 @@
-import express from "express";
 import cors from "cors";
-import helmet from "helmet";
-import morgan from "morgan";
-import { createServer } from "http";
-import { Server } from "socket.io";
 import dotenv from "dotenv";
+import type { Express } from "express";
+import express from "express";
+import helmet from "helmet";
+import { createServer } from "http";
+import morgan from "morgan";
+import { Server } from "socket.io";
 import { connectDB } from "./src/config/database";
 import { connectRedis } from "./src/config/redis";
-import { setupSocket } from "./src/socket";
-import { authRoutes } from "./src/routes/auth";
-import { boardRoutes } from "./src/routes/boards";
 import { errorHandler } from "./src/middleware/errorHandler";
 import { rateLimiter } from "./src/middleware/rateLimiter";
-import type { Express } from "express";
-import path from "path";
-
-const envPath = path.join(__dirname, '.env');
+import { authRoutes } from "./src/routes/auth";
+import { boardRoutes } from "./src/routes/boards";
+import { setupSocket } from "./src/socket";
 
 dotenv.config({
-  path: envPath,
+  path: ".env",
 });
-
-console.log("Path to .env file:", envPath);
 
 const app: Express = express();
 const server = createServer(app);

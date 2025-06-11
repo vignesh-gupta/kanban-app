@@ -5,6 +5,7 @@ import { useSelector } from "react-redux";
 import type { RootState } from "../store";
 import { BoardCard } from "../components/board/BoardCard";
 import { CreateBoardDialog } from "../components/board/CreateBoardDialog";
+import { UserButton } from "../components/ui/user-button";
 import { Button } from "../components/ui/button";
 import { Input } from "../components/ui/input";
 import { Plus, Search, Grid, List } from "lucide-react";
@@ -88,6 +89,8 @@ export function DashboardPage() {
                 <Plus className="w-4 h-4 mr-2" />
                 New Board
               </Button>
+
+              <UserButton showLabel={false} size="md" />
             </div>
           </div>
         </div>

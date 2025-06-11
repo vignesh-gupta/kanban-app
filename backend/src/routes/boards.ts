@@ -14,7 +14,39 @@ import mongoose from "mongoose";
 
 const router: Router = Router();
 
-// Apply authentication to all board routes
+// Get invitation details (no auth required)
+router.get("/invitation/:token/details", async (req, res, next) => {
+  try {
+    const { token } = req.params;
+    const invitation = await Invitation.findOne({
+      token,
+      status: "pending",
+    }).populate([
+      {
+        path: "boardId",
+        select: "title description color owner",
+        populate: {
+          path: "owner",
+          select: "name email",
+        },
+      },
+      {
+        path: "invitedBy",
+        select: "name email",
+      },
+    ]);
+
+    if (!invitation) {
+      return res.status(404).json({ message: "Invitation not found or expired" });
+    }
+
+    res.json(invitation);
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Apply authentication to all other board routes
 router.use(authenticate);
 
 // Validation schemas
@@ -45,7 +77,7 @@ const createCardSchema = z.object({
       })
     )
     .optional(),
-  assignees: z.array(z.string()).optional(),
+  assignee: z.string().optional(),
   dueDate: z.string().optional(),
 });
 
@@ -80,7 +112,7 @@ router.get("/", async (req: AuthRequest, res, next) => {
         const listsWithCards = await Promise.all(
           lists.map(async (list) => {
             const cards = await Card.find({ listId: list._id })
-              .populate("assignees", "name email avatar")
+              .populate("assignee", "name email avatar")
               .populate("createdBy", "name email avatar")
               .sort({ position: 1 });
 
@@ -134,7 +166,7 @@ router.get("/:boardId", async (req: AuthRequest, res, next) => {
     const listsWithCards = await Promise.all(
       lists.map(async (list) => {
         const cards = await Card.find({ listId: list._id })
-          .populate("assignees", "name email avatar")
+          .populate("assignee", "name email avatar")
           .populate("createdBy", "name email avatar")
           .sort({ position: 1 });
 
@@ -267,7 +299,7 @@ router.post(
         listId,
         position,
         labels,
-        assignees,
+        assignee,
         dueDate,
       } = req.body;
 
@@ -292,14 +324,14 @@ router.post(
         boardId,
         position,
         labels: labels || [],
-        assignees: assignees || [],
+        assignee: assignee || [],
         dueDate: dueDate ? new Date(dueDate) : undefined,
         createdBy: req.user._id,
       });
 
       await card.save();
       await card.populate([
-        { path: "assignees", select: "name email avatar" },
+        { path: "assignee", select: "name email avatar" },
         { path: "createdBy", select: "name email avatar" },
       ]);
 
@@ -325,7 +357,7 @@ router.post(
 router.put("/cards/:cardId", async (req: AuthRequest, res, next) => {
   try {
     const { cardId } = req.params;
-    const { title, description, labels, assignees, dueDate } = req.body;
+    const { title, description, labels, assignee, dueDate } = req.body;
 
     // Find the card first
     const card = await Card.findById(cardId);
@@ -354,14 +386,14 @@ router.put("/cards/:cardId", async (req: AuthRequest, res, next) => {
         ...(title !== undefined && { title }),
         ...(description !== undefined && { description }),
         ...(labels !== undefined && { labels }),
-        ...(assignees !== undefined && { assignees }),
+        ...(assignee !== undefined && { assignee }),
         ...(dueDate !== undefined && {
           dueDate: dueDate ? new Date(dueDate) : null,
         }),
       },
       { new: true }
     ).populate([
-      { path: "assignees", select: "name email avatar" },
+      { path: "assignee", select: "name email avatar" },
       { path: "createdBy", select: "name email avatar" },
     ]);
 
@@ -480,7 +512,7 @@ router.put(
         { listId, position },
         { new: true }
       ).populate([
-        { path: "assignees", select: "name email avatar" },
+        { path: "assignee", select: "name email avatar" },
         { path: "createdBy", select: "name email avatar" },
       ]);
 
@@ -589,5 +621,137 @@ router.post(
     }
   }
 );
+
+//Accept invitation
+router.post(
+  "/invitation/:token/accept",
+  async (req: AuthRequest, res, next) => {
+    try {
+      const { token } = req.params;
+      const invitation = await Invitation.findOne({
+        token,
+        status: "pending",
+      }).populate("boardId invitedBy", "title owner");
+      if (!invitation) {
+        return res.status(404).json({ message: "Invitation not found" });
+      }
+      if (invitation.email !== req.user.email) {
+        return res
+          .status(403)
+          .json({ message: "You are not invited to this board" });
+      }
+      // Check if user is already a collaborator
+      const board = await Board.findById(invitation.boardId);
+      if (!board) {
+        return res.status(404).json({ message: "Board not found" });
+      }
+      const existingCollaborator = board.collaborators.find((collab) =>
+        collab.user.equals(req.user._id)
+      );
+      if (existingCollaborator) {
+        return res
+          .status(400)
+          .json({ message: "You are already a collaborator on this board" });
+      }
+      // Add user as collaborator
+      board.collaborators.push({
+        user: req.user._id,
+        role: invitation.role,
+        joinedAt: new Date(),
+      });
+
+      await board.save();
+
+      // Update invitation status
+      invitation.status = "accepted";
+      await invitation.save();
+
+      // Create audit log
+      await new AuditLog({
+        action: "invitation_accepted",
+        user: req.user._id,
+        board: invitation.boardId,
+        details: `Accepted invitation to board "${board.title}"`,
+      }).save();
+      res.status(200).json({ message: "Invitation accepted successfully" });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// Reject invitation
+router.post(
+  "/invitation/:token/reject",
+  async (req: AuthRequest, res, next) => {
+    try {
+      const { token } = req.params;
+      const invitation = await Invitation.findOne({
+        token,
+        status: "pending",
+      });
+      if (!invitation) {
+        return res.status(404).json({ message: "Invitation not found" });
+      }
+      if (invitation.email !== req.user.email) {
+        return res
+          .status(403)
+          .json({ message: "You are not invited to this board" });
+      }
+
+      invitation.deleteOne();
+
+      // Create audit log
+      await new AuditLog({
+        action: "invitation_rejected",
+        user: req.user._id,
+        board: invitation.boardId,
+        details: `Rejected invitation to board "${invitation.boardId}"`,
+      }).save();
+      res.status(200).json({ message: "Invitation rejected successfully" });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// Delete board
+router.delete("/:boardId", async (req: AuthRequest, res, next) => {
+  try {
+    const { boardId } = req.params;
+    const board = await Board.findById(boardId);
+    if (!board) {
+      return res.status(404).json({ message: "Board not found" });
+    }
+    // Check if user is board owner
+    if (!board.owner.equals(req.user._id)) {
+      return res
+        .status(403)
+        .json({ message: "Only board owners can delete boards" });
+    }
+    // Delete all lists and cards associated with the board
+
+    await Promise.allSettled([
+      List.deleteMany({ boardId }),
+      Card.deleteMany({ boardId }),
+      Comment.deleteMany({ boardId }),
+      Invitation.deleteMany({ boardId }),
+      board.deleteOne(),
+      new AuditLog({
+        action: "board_deleted",
+        user: req.user._id,
+        board: boardId,
+        details: `Deleted board "${board.title}"`,
+      }).save(),
+    ]);
+
+    // Delete the board
+
+    // Create audit log
+    res.status(204).send();
+  } catch (error) {
+    next(error);
+  }
+});
 
 export { router as boardRoutes };

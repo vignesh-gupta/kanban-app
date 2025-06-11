@@ -42,7 +42,7 @@ export interface Card {
   boardId: string;
   position: number;
   labels: Label[];
-  assignees: User[];
+  assignee: User;
   dueDate?: string;
   comments: Comment[];
   createdBy: User;

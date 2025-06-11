@@ -55,7 +55,6 @@ const invitationSchema = new Schema<IInvitation>({
 })
 
 // Indexes for better query performance
-invitationSchema.index({ token: 1 })
 invitationSchema.index({ email: 1, boardId: 1 })
 invitationSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 })
 

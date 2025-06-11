@@ -20,7 +20,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MoreHorizontal, Plus, Trash2, Edit3 } from "lucide-react";
-import type { List } from "@/types";
+import type { List, Board } from "@/types";
 import { KanbanCard } from "./KanbanCard";
 import { CreateCardForm } from "./CreateCardForm";
 import { socketService } from "@/services/socket";
@@ -32,12 +32,14 @@ interface KanbanListProps {
   list: List;
   boardId: string;
   isDragging?: boolean;
+  board?: Board;
 }
 
 export function KanbanList({
   list,
   boardId,
   isDragging = false,
+  board,
 }: KanbanListProps) {
   const [showCreateCard, setShowCreateCard] = useState(false);
   const [isEditingTitle, setIsEditingTitle] = useState(false);
@@ -217,13 +219,12 @@ export function KanbanList({
             "flex-1 mb-3 space-y-3 overflow-y-auto min-h-[100px] p-2 rounded-lg transition-colors",
             isOver && "bg-blue-50 border-2 border-blue-200 border-dashed"
           )}
-        >
-          <SortableContext
+        >          <SortableContext
             items={list.cards.map((card) => card._id)}
             strategy={verticalListSortingStrategy}
           >
             {list.cards.map((card) => (
-              <KanbanCard key={card._id} card={card} />
+              <KanbanCard key={card._id} card={card} board={board} />
             ))}
           </SortableContext>
 

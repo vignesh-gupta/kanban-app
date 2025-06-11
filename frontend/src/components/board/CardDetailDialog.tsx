@@ -2,7 +2,12 @@
 
 import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -10,7 +15,6 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Separator } from "@/components/ui/separator";
 import {
-  Calendar,
   MessageSquare,
   User,
   Tag,
@@ -18,39 +22,70 @@ import {
   Send,
   Edit3,
   Save,
+  CalendarIcon,
 } from "lucide-react";
-import type { Card as CardType } from "@/types";
+import type { Card as CardType, Board, User as UserType } from "@/types";
 import { getInitials, formatDate } from "@/lib/utils";
 import { socketService } from "@/services/socket";
 import api from "@/services/api";
 import toast from "react-hot-toast";
+import { useSelector } from "react-redux";
+import type { RootState } from "@/store";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import { format } from "date-fns";
+import { Calendar } from "../ui/calendar";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../ui/select";
 
 interface CardDetailDialogProps {
   card: CardType;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  board?: Board;
 }
 
 export function CardDetailDialog({
   card,
   open,
   onOpenChange,
+  board,
 }: CardDetailDialogProps) {
   const [isEditingTitle, setIsEditingTitle] = useState(false);
   const [isEditingDescription, setIsEditingDescription] = useState(false);
   const [title, setTitle] = useState(card.title);
   const [description, setDescription] = useState(card.description || "");
+  const [dueDate, setDueDate] = useState(
+    card.dueDate ? new Date(card.dueDate) : ""
+  );
   const [newComment, setNewComment] = useState("");
+  const [assignee, setAssignee] = useState(card.assignee?._id || "none");
+
   const queryClient = useQueryClient();
 
+  const { user } = useSelector((state: RootState) => state.auth);
+
+  // Get board members for assignee dropdown
+  const boardMembers: UserType[] = board
+    ? [board.owner, ...board.collaborators.map((c) => c.user)]
+    : [];
   const updateCardMutation = useMutation({
-    mutationFn: async (data: { title?: string; description?: string }) => {
-      const response = await api.put(`/cards/${card._id}`, data);
+    mutationFn: async (data: {
+      title?: string;
+      description?: string;
+      assignee?: string | null;
+      dueDate?: string;
+    }) => {
+      const response = await api.put(`/boards/cards/${card._id}`, data);
       return response.data;
     },
-    onSuccess: () => {
+    onSuccess: (updatedCard) => {
       queryClient.invalidateQueries({ queryKey: ["board", card.boardId] });
-      socketService.updateCard({ ...card, title, description });
+      socketService.updateCard(updatedCard);
       setIsEditingTitle(false);
       setIsEditingDescription(false);
       toast.success("Card updated successfully!");
@@ -62,7 +97,7 @@ export function CardDetailDialog({
 
   const createCommentMutation = useMutation({
     mutationFn: async (content: string) => {
-      const response = await api.post(`/cards/${card._id}/comments`, {
+      const response = await api.post(`/boards/cards/${card._id}/comments`, {
         content,
       });
       return response.data;
@@ -97,16 +132,33 @@ export function CardDetailDialog({
       setIsEditingDescription(false);
     }
   };
-
   const handleAddComment = () => {
     if (newComment.trim()) {
       createCommentMutation.mutate(newComment.trim());
     }
   };
 
+  const handleAssignUser = (userId: string | null) => {
+    const finalUserId = !userId || userId === "none" ? null : userId;
+
+    console.log("Assigning User ID:", finalUserId);
+
+    setAssignee(finalUserId || "none");
+    updateCardMutation.mutate({
+      assignee: finalUserId,
+    });
+  };
+
+  const handleUpdateDueDate = (newDueDate: Date | undefined) => {
+    setDueDate(newDueDate || "");
+    updateCardMutation.mutate({
+      dueDate: newDueDate ? new Date(newDueDate).toISOString() : undefined,
+    });
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <div className="flex items-start space-x-3">
             <div className="flex-1">
@@ -127,7 +179,7 @@ export function CardDetailDialog({
                     autoFocus
                   />
                   <Button size="sm" onClick={handleUpdateTitle}>
-                    <Save className="w-4 h-4" />
+                    <Save className="size-4" />
                   </Button>
                 </div>
               ) : (
@@ -136,14 +188,11 @@ export function CardDetailDialog({
                   onClick={() => setIsEditingTitle(true)}
                 >
                   <span>{card.title}</span>
-                  <Edit3 className="w-4 h-4 opacity-50" />
+                  <Edit3 className="size-4 opacity-50" />
                 </DialogTitle>
               )}
 
               <div className="flex items-center mt-2 space-x-4 text-sm text-gray-500">
-                <span>in list</span>
-                <span className="font-medium">List Name</span>
-                <span>•</span>
                 <span>Created {formatDate(card.createdAt)}</span>
               </div>
             </div>
@@ -157,7 +206,7 @@ export function CardDetailDialog({
             {card.labels.length > 0 && (
               <div>
                 <div className="flex items-center mb-2 space-x-2">
-                  <Tag className="w-4 h-4" />
+                  <Tag className="size-4" />
                   <span className="text-sm font-medium">Labels</span>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -181,7 +230,7 @@ export function CardDetailDialog({
             {/* Description */}
             <div>
               <div className="flex items-center mb-2 space-x-2">
-                <MessageSquare className="w-4 h-4" />
+                <MessageSquare className="size-4" />
                 <span className="text-sm font-medium">Description</span>
               </div>
 
@@ -229,7 +278,7 @@ export function CardDetailDialog({
             {/* Comments */}
             <div>
               <div className="flex items-center mb-4 space-x-2">
-                <MessageSquare className="w-4 h-4" />
+                <MessageSquare className="size-4" />
                 <span className="text-sm font-medium">Comments</span>
                 <Badge variant="secondary">{card.comments.length}</Badge>
               </div>
@@ -238,7 +287,7 @@ export function CardDetailDialog({
               <div className="flex mb-4 space-x-3">
                 <Avatar className="w-8 h-8">
                   <AvatarFallback className="text-xs text-white bg-blue-500">
-                    {getInitials("Current User")}
+                    {getInitials(user?.name || "U")}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 space-y-2">
@@ -255,7 +304,7 @@ export function CardDetailDialog({
                       !newComment.trim() || createCommentMutation.isPending
                     }
                   >
-                    <Send className="w-4 h-4 mr-2" />
+                    <Send className="size-4 mr-2" />
                     {createCommentMutation.isPending ? "Posting..." : "Comment"}
                   </Button>
                 </div>
@@ -296,54 +345,71 @@ export function CardDetailDialog({
           <div className="space-y-4">
             {/* Assignees */}
             <div>
-              <div className="flex items-center mb-2 space-x-2">
-                <User className="w-4 h-4" />
-                <span className="text-sm font-medium">Members</span>
-              </div>
-              <div className="space-y-2">
-                {card.assignees.map((assignee) => (
-                  <div
-                    key={assignee._id}
-                    className="flex items-center space-x-2"
-                  >
-                    <Avatar className="w-6 h-6">
-                      <AvatarImage src={assignee.avatar} />
-                      <AvatarFallback className="text-xs text-white bg-blue-500">
-                        {getInitials(assignee.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="text-sm">{assignee.name}</span>
-                  </div>
-                ))}
-                {card.assignees.length === 0 && (
-                  <p className="text-sm text-gray-500">No members assigned</p>
-                )}
-              </div>
-            </div>
-
-            <Separator />
-
-            {/* Due Date */}
-            <div>
-              <div className="flex items-center mb-2 space-x-2">
-                <Clock className="w-4 h-4" />
-                <span className="text-sm font-medium">Due Date</span>
-              </div>
-              {card.dueDate ? (
-                <div className="text-sm text-gray-600">
-                  {formatDate(card.dueDate)}
+              <div className="flex justify-between mb-2 flex-col">
+                <div className="flex items-center space-x-2">
+                  <User className="size-4" />
+                  <span className="text-sm font-medium">Members</span>
                 </div>
-              ) : (
-                <p className="text-sm text-gray-500">No due date</p>
-              )}
+
+                <Select onValueChange={handleAssignUser}>
+                  <SelectTrigger value={assignee}>
+                    <SelectValue placeholder="Select a assignee" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {boardMembers.map((member) => (
+                      <SelectItem value={member._id} key={member._id}>
+                        <Avatar className="size-4 mr-1">
+                          <AvatarImage src={member.avatar} />
+                          <AvatarFallback className="text-xs text-white bg-gray-500">
+                            {getInitials(member.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span>{member.name}</span>
+                      </SelectItem>
+                    ))}
+                    <SelectItem value="none">No assignee</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
+            <Separator /> {/* Due Date */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center space-x-2">
+                  <Clock className="size-4" />
+                  <span className="text-sm font-medium">Due Date</span>
+                </div>
+              </div>
 
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    data-empty={!dueDate && !card.dueDate}
+                    className="data-[empty=true]:text-muted-foreground justify-start text-left font-normal"
+                  >
+                    <CalendarIcon />
+                    {dueDate ? (
+                      format(dueDate, "PPP")
+                    ) : (
+                      <span>Pick a date</span>
+                    )}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0">
+                  <Calendar
+                    mode="single"
+                    selected={new Date(dueDate || "")}
+                    onSelect={handleUpdateDueDate}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
             <Separator />
-
             {/* Created */}
             <div>
               <div className="flex items-center mb-2 space-x-2">
-                <Calendar className="w-4 h-4" />
+                <CalendarIcon className="size-4" />
                 <span className="text-sm font-medium">Created</span>
               </div>
               <div className="flex items-center space-x-2">

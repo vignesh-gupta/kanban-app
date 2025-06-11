@@ -23,10 +23,11 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { ArrowLeft, Users, Settings, Star, MoreHorizontal } from "lucide-react";
+import { ArrowLeft, Users, Settings, Star, MoreHorizontal, Trash2 } from "lucide-react";
 import type { RootState } from "@/store";
 import type { Board } from "@/types";
 import { getInitials } from "@/lib/utils";
+import { UserButton } from "@/components/ui/user-button";
 import api from "@/services/api";
 import toast from "react-hot-toast";
 import InviteMember from "./InviteMember";
@@ -48,15 +49,7 @@ export function BoardHeader({ board }: BoardHeaderProps) {
   const isOwner = board.owner._id === user?._id;
   const totalMembers = board.collaborators.length + 1;
 
-  console.log("Board Header Rendered", {
-    board,
-    isOwner,
-    totalMembers,
-    user,
-    boardOwnerId: board.owner._id,
-    currentUserId: user?._id,
-  });
-
+ 
   const updateBoardMutation = useMutation({
     mutationFn: async (data: { title: string; description: string }) => {
       const response = await api.put(`/boards/${board._id}`, data);
@@ -72,12 +65,36 @@ export function BoardHeader({ board }: BoardHeaderProps) {
     },
   });
 
+  const deleteBoardMutation = useMutation({
+    mutationFn: async () => {
+      const response = await api.delete(`/boards/${board._id}`);
+      return response.data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["boards"] });
+      toast.success("Board deleted successfully!");
+      navigate("/dashboard");
+    },
+    onError: (error: any) => {
+      toast.error(error.response?.data?.message || "Failed to delete board");
+    },
+  });
   const handleUpdateBoard = () => {
     if (!boardTitle.trim()) return;
     updateBoardMutation.mutate({
       title: boardTitle,
       description: boardDescription,
     });
+  };
+
+  const handleDeleteBoard = () => {
+    if (
+      window.confirm(
+        "Are you sure you want to delete this board? This action cannot be undone and all lists and cards will be permanently deleted."
+      )
+    ) {
+      deleteBoardMutation.mutate();
+    }
   };
 
   return (
@@ -150,9 +167,7 @@ export function BoardHeader({ board }: BoardHeaderProps) {
               <Users className="size-4 mr-1" />
               {totalMembers}
             </Badge>
-          </div>
-
-          {/* Actions */}
+          </div>          {/* Actions */}
           <div className="flex items-center space-x-2">
             <InviteMember boardId={board._id} />
 
@@ -161,8 +176,7 @@ export function BoardHeader({ board }: BoardHeaderProps) {
                 <Button variant="ghost" size="sm">
                   <MoreHorizontal className="w-4 h-4" />
                 </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
+              </DropdownMenuTrigger>              <DropdownMenuContent align="end">
                 {isOwner && (
                   <>
                     <DropdownMenuItem
@@ -170,6 +184,14 @@ export function BoardHeader({ board }: BoardHeaderProps) {
                     >
                       <Settings className="w-4 h-4 mr-2" />
                       Board Settings
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      onClick={handleDeleteBoard}
+                      variant="destructive"
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" />
+                      Delete Board
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                   </>
@@ -180,6 +202,8 @@ export function BoardHeader({ board }: BoardHeaderProps) {
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
+
+            <UserButton showLabel={false} size="md" />
           </div>
         </div>
       </div>

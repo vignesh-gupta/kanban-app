@@ -1,9 +1,14 @@
+import { config } from "dotenv";
 import { createClient, RedisClientType } from "redis";
+
+config({
+  path: ".env",
+})
 
 export const redisClient: RedisClientType = createClient({
   url:
     process.env.REDIS_URL ||
-    "rediss://default:AbioAAIjcDFlNTI1MGZlOGVkYjc0YWNhOTYxMmZiMmVlMmFmZmRhM3AxMA@engaging-macaque-47272.upstash.io:6379",
+    "redis://localhost:6379",
 });
 
 export const connectRedis = async (): Promise<void> => {

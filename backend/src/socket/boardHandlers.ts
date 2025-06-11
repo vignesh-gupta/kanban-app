@@ -173,7 +173,7 @@ export const boardSocketHandlers = (io: Server, socket: Socket) => {
       
       await card.save()
       await card.populate([
-        { path: 'assignees', select: 'name email avatar' },
+        { path: 'assignee', select: 'name email avatar' },
         { path: 'createdBy', select: 'name email avatar' }
       ])
       
@@ -201,7 +201,7 @@ export const boardSocketHandlers = (io: Server, socket: Socket) => {
         data,
         { new: true }
       ).populate([
-        { path: 'assignees', select: 'name email avatar' },
+        { path: 'assignee', select: 'name email avatar' },
         { path: 'createdBy', select: 'name email avatar' }
       ])
       
@@ -255,7 +255,7 @@ export const boardSocketHandlers = (io: Server, socket: Socket) => {
         { listId: toListId, position },
         { new: true }
       ).populate([
-        { path: 'assignees', select: 'name email avatar' },
+        { path: 'assignee', select: 'name email avatar' },
         { path: 'createdBy', select: 'name email avatar' }
       ])
       

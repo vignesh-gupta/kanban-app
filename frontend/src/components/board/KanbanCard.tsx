@@ -21,7 +21,7 @@ import {
   Clock,
   AlertCircle,
 } from "lucide-react";
-import type { Card as CardType } from "@/types";
+import type { Card as CardType, Board } from "@/types";
 import { getInitials, formatDate } from "@/lib/utils";
 import { cn } from "@/lib/utils";
 import { CardDetailDialog } from "./CardDetailDialog";
@@ -29,9 +29,10 @@ import { CardDetailDialog } from "./CardDetailDialog";
 interface KanbanCardProps {
   card: CardType;
   isDragging?: boolean;
+  board?: Board;
 }
 
-export function KanbanCard({ card, isDragging = false }: KanbanCardProps) {
+export function KanbanCard({ card, isDragging = false, board }: KanbanCardProps) {
   const [showDetailDialog, setShowDetailDialog] = useState(false);
 
   const {
@@ -152,27 +153,16 @@ export function KanbanCard({ card, isDragging = false }: KanbanCardProps) {
 
             <div className="flex items-center space-x-1">
               {/* Assignees */}
-              {card.assignees.length > 0 && (
-                <div className="flex -space-x-1">
-                  {card.assignees.slice(0, 3).map((assignee) => (
-                    <Avatar
-                      key={assignee._id}
-                      className="w-6 h-6 border-2 border-white"
-                    >
-                      <AvatarImage src={assignee.avatar} />
-                      <AvatarFallback className="text-xs text-white bg-blue-500">
-                        {getInitials(assignee.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                  ))}
-                  {card.assignees.length > 3 && (
-                    <div className="flex items-center justify-center w-6 h-6 bg-gray-100 border-2 border-white rounded-full">
-                      <span className="text-xs text-gray-600">
-                        +{card.assignees.length - 3}
-                      </span>
-                    </div>
-                  )}
-                </div>
+              {card.assignee && (
+                <Avatar
+                  key={card.assignee._id}
+                  className="w-6 h-6 border-2 border-white"
+                >
+                  <AvatarImage src={card.assignee.avatar} />
+                  <AvatarFallback className="text-xs text-white bg-blue-500">
+                    {getInitials(card.assignee.name)}
+                  </AvatarFallback>
+                </Avatar>
               )}
 
               {/* Card menu */}
@@ -204,12 +194,11 @@ export function KanbanCard({ card, isDragging = false }: KanbanCardProps) {
             </div>
           </div>
         </CardContent>
-      </Card>
-
-      <CardDetailDialog
+      </Card>      <CardDetailDialog
         card={card}
         open={showDetailDialog}
         onOpenChange={setShowDetailDialog}
+        board={board}
       />
     </>
   );

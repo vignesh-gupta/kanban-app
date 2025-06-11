@@ -11,7 +11,7 @@ export interface ICard extends Document {
     name: string
     color: string
   }>
-  assignees: mongoose.Types.ObjectId[]
+  assignee: mongoose.Types.ObjectId
   dueDate?: Date
   createdBy: mongoose.Types.ObjectId
   createdAt: Date
@@ -61,10 +61,10 @@ const cardSchema = new Schema<ICard>({
       match: [/^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})$/, 'Please enter a valid hex color']
     }
   }],
-  assignees: [{
+  assignee: {
     type: Schema.Types.ObjectId,
     ref: 'User'
-  }],
+  },
   dueDate: {
     type: Date
   },
@@ -80,7 +80,7 @@ const cardSchema = new Schema<ICard>({
 // Indexes for better query performance
 cardSchema.index({ listId: 1, position: 1 })
 cardSchema.index({ boardId: 1 })
-cardSchema.index({ assignees: 1 })
+cardSchema.index({ assignee: 1 })
 cardSchema.index({ title: 'text', description: 'text' })
 
 export const Card = mongoose.model<ICard>('Card', cardSchema)

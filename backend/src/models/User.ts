@@ -38,7 +38,4 @@ const userSchema = new Schema<IUser>({
   timestamps: true
 })
 
-// Index for better query performance
-userSchema.index({ email: 1 })
-
 export const User = mongoose.model<IUser>('User', userSchema)

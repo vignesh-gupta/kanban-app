@@ -183,10 +183,9 @@ export function KanbanBoard({ board }: KanbanBoardProps) {
           <div className="flex h-full gap-6 p-6 min-w-max">
             <SortableContext
               items={board.lists.map((list) => list._id)}
-              strategy={horizontalListSortingStrategy}
-            >
+              strategy={horizontalListSortingStrategy}            >
               {board.lists.map((list) => (
-                <KanbanList key={list._id} list={list} boardId={board._id} />
+                <KanbanList key={list._id} list={list} boardId={board._id} board={board} />
               ))}
             </SortableContext>
 
@@ -195,17 +194,15 @@ export function KanbanBoard({ board }: KanbanBoardProps) {
               isLoading={createListMutation.isPending}
             />
           </div>
-        </div>
-
-        <DragOverlay>
+        </div>        <DragOverlay>
           {activeCard && (
             <div className="rotate-3 opacity-90">
-              <KanbanCard card={activeCard} isDragging />
+              <KanbanCard card={activeCard} isDragging board={board} />
             </div>
           )}
           {activeList && (
             <div className="rotate-2 opacity-90">
-              <KanbanList list={activeList} boardId={board._id} isDragging />
+              <KanbanList list={activeList} boardId={board._id} isDragging board={board} />
             </div>
           )}
         </DragOverlay>
