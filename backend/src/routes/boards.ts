@@ -37,7 +37,9 @@ router.get("/invitation/:token/details", async (req, res, next) => {
     ]);
 
     if (!invitation) {
-      return res.status(404).json({ message: "Invitation not found or expired" });
+      return res
+        .status(404)
+        .json({ message: "Invitation not found or expired" });
     }
 
     res.json(invitation);
@@ -260,6 +262,18 @@ router.post(
         return res.status(403).json({ message: "Access denied" });
       }
 
+      const isSameTitle = await List.findOne({ title, boardId });
+
+      console.log({
+        isSameTitle,
+      });
+
+      if (isSameTitle) {
+        return res
+          .status(409)
+          .json({ message: "Same List is present in the board" });
+      }
+
       const list = new List({
         title,
         boardId,
@@ -285,6 +299,25 @@ router.post(
     }
   }
 );
+
+// Delete list
+router.delete("/lists/:listId", async (req: AuthRequest, res, next) => {
+  try {
+    const { listId } = req.params;
+
+    const list = await List.findById(listId);
+
+    if (!list) {
+      return res.status(404).json({ message: "List not found" });
+    }
+
+    await List.deleteOne({ id: listId });
+
+    return res.json({ message: "List Deleted" });
+  } catch (error) {
+    next(error);
+  }
+});
 
 // Create card
 router.post(

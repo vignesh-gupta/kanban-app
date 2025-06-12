@@ -162,6 +162,23 @@ export function KanbanBoard({ board }: KanbanBoardProps) {
         }
       }
     }
+    // List Movement
+    else if (activeType === "list") {
+      const overList = over.data.current?.list as ListType;
+      const activeList = active.data.current?.list as ListType;
+
+      console.log({ activeType, active, over, overType, lists: board.lists });
+      if (overType === "list") {
+        const oldIndex = board.lists.findIndex(
+          (list) => activeList?._id === list._id
+        );
+        const newIndex = board.lists.findIndex(
+          (list) => overList._id === list._id
+        );
+
+        arrayMove(board.lists, oldIndex, newIndex);
+      }
+    }
   };
 
   const handleCreateList = (title: string) => {
@@ -183,9 +200,15 @@ export function KanbanBoard({ board }: KanbanBoardProps) {
           <div className="flex h-full gap-6 p-6 min-w-max">
             <SortableContext
               items={board.lists.map((list) => list._id)}
-              strategy={horizontalListSortingStrategy}            >
+              strategy={horizontalListSortingStrategy}
+            >
               {board.lists.map((list) => (
-                <KanbanList key={list._id} list={list} boardId={board._id} board={board} />
+                <KanbanList
+                  key={list._id}
+                  list={list}
+                  boardId={board._id}
+                  board={board}
+                />
               ))}
             </SortableContext>
 
@@ -194,7 +217,8 @@ export function KanbanBoard({ board }: KanbanBoardProps) {
               isLoading={createListMutation.isPending}
             />
           </div>
-        </div>        <DragOverlay>
+        </div>{" "}
+        <DragOverlay>
           {activeCard && (
             <div className="rotate-3 opacity-90">
               <KanbanCard card={activeCard} isDragging board={board} />
@@ -202,7 +226,12 @@ export function KanbanBoard({ board }: KanbanBoardProps) {
           )}
           {activeList && (
             <div className="rotate-2 opacity-90">
-              <KanbanList list={activeList} boardId={board._id} isDragging board={board} />
+              <KanbanList
+                list={activeList}
+                boardId={board._id}
+                isDragging
+                board={board}
+              />
             </div>
           )}
         </DragOverlay>

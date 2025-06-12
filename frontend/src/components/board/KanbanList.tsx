@@ -92,7 +92,7 @@ export function KanbanList({
 
   const deleteListMutation = useMutation({
     mutationFn: async () => {
-      const response = await api.delete(`/lists/${list._id}`);
+      const response = await api.delete(`/boards/lists/${list._id}`);
       return response.data;
     },
     onSuccess: () => {
@@ -178,7 +178,7 @@ export function KanbanList({
               className="font-medium text-gray-900 transition-colors cursor-pointer hover:text-blue-600"
               onClick={() => setIsEditingTitle(true)}
             >
-              {list.title} {list._id}
+              {list.title}
             </h3>
           )}
 
@@ -219,7 +219,9 @@ export function KanbanList({
             "flex-1 mb-3 space-y-3 overflow-y-auto min-h-[100px] p-2 rounded-lg transition-colors",
             isOver && "bg-blue-50 border-2 border-blue-200 border-dashed"
           )}
-        >          <SortableContext
+        >
+          {" "}
+          <SortableContext
             items={list.cards.map((card) => card._id)}
             strategy={verticalListSortingStrategy}
           >
@@ -227,7 +229,6 @@ export function KanbanList({
               <KanbanCard key={card._id} card={card} board={board} />
             ))}
           </SortableContext>
-
           {list.cards.length === 0 && (
             <div
               className={cn(
